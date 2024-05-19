@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lessons</title>
+</head>
+<body>
+    {% for row_group in lessons %}
+    <h2>ID: {{ row_group['ID'] }}</h2>
+    <table border="1">
+        {% for row_num in row_group %}
+            <tr>
+                <td>Row: {{ row_num }}</td>
+                {% for lesson in row_num %}
+                    <td>{{ lesson['content'] }}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+{% endfor %}
+</body>
+</html>

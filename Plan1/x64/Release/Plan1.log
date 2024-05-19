@@ -1,0 +1,12 @@
+﻿  Plan1.cpp
+C:\Users\mikol\ProgrammingProjects\C++Projects\Plan1\Plan1.cpp(98,82): warning C4267: "argument": konwersja z "size_t" do "int", możliwa utrata danych
+C:\Users\mikol\ProgrammingProjects\C++Projects\Plan1\Plan1.cpp(162,90): warning C4267: "argument": konwersja z "size_t" do "int", możliwa utrata danych
+LINK : warning LNK4098: domyślna biblioteka „LIBCMT” powoduje konflikt z innymi bibliotekami; użyj opcji /NODEFAULTLIB:biblioteka
+  Trwa generowanie kodu
+  2 of 1294 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
+    1 functions were new in current compilation
+    2 functions had inline decision re-evaluated but remain unchanged
+  Zakończono generowanie kodu
+  Plan1.vcxproj -> C:\Users\mikol\ProgrammingProjects\C++Projects\Plan1\x64\Release\Plan1.exe
+  'pwsh.exe' is not recognized as an internal or external command,
+  operable program or batch file.
