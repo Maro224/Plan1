@@ -49,7 +49,7 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* dat
     return size * nmemb;
 }
 
-std::vector<std::vector<std::vector<Lesson>>> groupLessonsByColAndRow(const std::vector<Lesson>& lessons) {
+std::vector<std::vector<std::vector<Lesson>>> groupLessonsByColAndRow(const std::vector<Lesson>& lessons, const std::string& id) {
     // Create a map to group lessons by colNum and rowNum
     std::map<int, std::map<int, std::vector<Lesson>>> colRowGroupedLessons;
 
@@ -61,12 +61,20 @@ std::vector<std::vector<std::vector<Lesson>>> groupLessonsByColAndRow(const std:
     // Convert the map to the required nested vector structure
     std::vector<std::vector<std::vector<Lesson>>> groupedLessons;
 
-    for (const auto& colPair : colRowGroupedLessons) {
-        std::vector<std::vector<Lesson>> colGroup;
-        for (const auto& rowPair : colPair.second) {
-            colGroup.push_back(rowPair.second);
+    for (const auto& rowPair : colRowGroupedLessons) {
+        std::vector<std::vector<Lesson>> rowGroup;
+        for (int colNum = 1; colNum <= 5; ++colNum) {
+            auto it = rowPair.second.find(colNum);
+            if (it == rowPair.second.end()) {
+                // If no lessons in this column, insert a default-constructed empty lesson
+                Lesson blankLesson("", id, "", rowPair.first, colNum);
+                rowGroup.push_back({ blankLesson });
+            }
+            else {
+                rowGroup.push_back(it->second);
+            }
         }
-        groupedLessons.push_back(colGroup);
+        groupedLessons.push_back(rowGroup);
     }
 
     return groupedLessons;
@@ -82,7 +90,7 @@ std::vector<std::vector<std::vector<Lesson>>> filterAndGroupLessonsByID(const st
     }
 
     // Group filtered lessons by colNum and rowNum
-    return groupLessonsByColAndRow(filteredLessons);
+    return groupLessonsByColAndRow(filteredLessons, id);
 }
 
 int main() {
