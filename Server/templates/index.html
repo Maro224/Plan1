@@ -7,13 +7,14 @@
 </head>
 <body>
     {% for row_group in lessons %}
-    <h2>ID: {{ row_group['ID'] }}</h2>
+    <h2>ID: {{ row_group[0][0][0]['ID'] }}</h2>
     <table border="1">
         {% for row_num in row_group %}
             <tr>
-                <td>Row: {{ row_num }}</td>
-                {% for lesson in row_num %}
-                    <td>{{ lesson['content'] }}</td>
+                {% for column in row_num %}
+                    {% for lesson in column %}
+                        <td>{{ lesson }}</td>
+                    {% endfor %}
                 {% endfor %}
             </tr>
         {% endfor %}

@@ -30,18 +30,17 @@ struct Lesson {
     std::string content;
     std::string ID;
     std::string classID;
-    Lesson(std::string content, std::string ID, std::string classID) {
-        this->content = content;
-        this->ID = ID;
-        this->classID = classID;
-    }
+    int rowNum;
+    int colNum;
+    Lesson(std::string content, std::string ID, std::string classID, int rowNum, int colNum)
+        : content(content), ID(ID), classID(classID), rowNum(rowNum), colNum(colNum) {}
 };
 
 // Define how to convert Lesson to JSON
 void to_json(nlohmann::json& j, const Lesson& lesson) {
     j = nlohmann::json{ {"content", lesson.content},
-                       {"ID", lesson.ID},
-                       {"classID", lesson.classID},};
+                        {"ID", lesson.ID},
+                        {"classID", lesson.classID} };
 }
 
 // Callback function to handle libcurl response
@@ -50,17 +49,41 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* dat
     return size * nmemb;
 }
 
-std::vector<std::vector<Lesson>> filterLessonsByID(const std::vector<std::vector<Lesson>>& lessons, const std::string& id) {
-    std::vector<std::vector<Lesson>> filteredLessons;
-    for (const std::vector<Lesson>& row : lessons) {
-		std::vector<Lesson> filteredRow;
-		std::copy_if(row.begin(), row.end(), std::back_inserter(filteredRow),
-            			[&id](const Lesson& lesson) { return lesson.ID == id; });
-		filteredLessons.push_back(filteredRow);
-	}
-    return filteredLessons;
+std::vector<std::vector<std::vector<Lesson>>> groupLessonsByColAndRow(const std::vector<Lesson>& lessons) {
+    // Create a map to group lessons by colNum and rowNum
+    std::map<int, std::map<int, std::vector<Lesson>>> colRowGroupedLessons;
+
+    // Populate the map
+    for (const Lesson& lesson : lessons) {
+        colRowGroupedLessons[lesson.rowNum][lesson.colNum].push_back(lesson);
+    }
+
+    // Convert the map to the required nested vector structure
+    std::vector<std::vector<std::vector<Lesson>>> groupedLessons;
+
+    for (const auto& colPair : colRowGroupedLessons) {
+        std::vector<std::vector<Lesson>> colGroup;
+        for (const auto& rowPair : colPair.second) {
+            colGroup.push_back(rowPair.second);
+        }
+        groupedLessons.push_back(colGroup);
+    }
+
+    return groupedLessons;
 }
 
+std::vector<std::vector<std::vector<Lesson>>> filterAndGroupLessonsByID(const std::vector<Lesson>& lessons, const std::string& id) {
+    // Filter lessons by ID
+    std::vector<Lesson> filteredLessons;
+    for (const Lesson& lesson : lessons) {
+        if (lesson.ID == id) {
+            filteredLessons.push_back(lesson);
+        }
+    }
+
+    // Group filtered lessons by colNum and rowNum
+    return groupLessonsByColAndRow(filteredLessons);
+}
 
 int main() {
     // Initialize libcurl
@@ -68,9 +91,9 @@ int main() {
     CURL* curl = curl_easy_init();
     if (curl) {
         std::list<std::string> links;
-        std::vector<std::vector<std::vector<Lesson>>> idLessons;
+        std::vector<std::vector<std::vector<std::vector<Lesson>>>> idLessons;
         std::set<std::string> iDs;
-        std::vector<std::vector<Lesson>> rows;
+        std::vector<Lesson> lessons;
 
         // Specify URL to fetch
         std::string url = "http://slowacki.kielce.eu/plan/lista.html";
@@ -130,12 +153,10 @@ int main() {
 
         // Cleanup libcurl
         curl_easy_cleanup(curl);
-        for (std::string link : links)
-        {
-            CURL* curl = curl_easy_init();
-            //std::string className;
-            if (curl) {
 
+        for (const std::string& link : links) {
+            CURL* curl = curl_easy_init();
+            if (curl) {
                 // Specify URL to fetch
                 std::string url = "http://slowacki.kielce.eu/plan/" + link;
                 curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
@@ -170,6 +191,7 @@ int main() {
                         std::cerr << "Error: Unable to parse HTML document." << std::endl;
                         return 1;
                     }
+
                     // Create XPath context
                     xmlXPathContextPtr xpathCtx = xmlXPathNewContext(doc);
                     if (xpathCtx == NULL) {
@@ -194,7 +216,6 @@ int main() {
                             xmlNodePtr trNode = nodes->nodeTab[i];
                             int rowNum = 0;
                             int colNum = 0;
-                            std::vector<Lesson> lessons;
                             // Iterate through the td elements within the tr
                             for (xmlNodePtr tdNode = trNode->children; tdNode; tdNode = tdNode->next) {
                                 if (tdNode->type == XML_ELEMENT_NODE && xmlStrcmp(tdNode->name, BAD_CAST("td")) == 0) {
@@ -223,7 +244,7 @@ int main() {
                                                 std::string sub3 = sub2.substr(0, sub2.find(" "));
                                                 std::string sub4 = sub2.substr(sub2.find(" ") + 1);
 
-                                                Lesson lesson = Lesson(sub1, sub3, sub4);
+                                                Lesson lesson = Lesson(sub1, sub3, sub4, rowNum, colNum);
                                                 lessons.push_back(lesson);
                                             }
                                         }
@@ -241,7 +262,7 @@ int main() {
                                                         std::string sub3 = sub2.substr(0, sub2.find(" "));
                                                         std::string sub4 = sub2.substr(sub2.find(" ") + 1);
 
-                                                        Lesson lesson = Lesson(sub1, sub3, sub4);
+                                                        Lesson lesson = Lesson(sub1, sub3, sub4, rowNum, colNum);
                                                         lessons.push_back(lesson);
                                                     }
                                                 }
@@ -250,7 +271,6 @@ int main() {
                                     }
                                 }
                             }
-                            if(lessons.size() > 0) rows.push_back(lessons);
                         }
                     }
 
@@ -260,28 +280,27 @@ int main() {
                     xmlFreeDoc(document);
                     xmlCleanupParser();
                 }
+                curl_easy_cleanup(curl);
             }
         }
-        curl_easy_cleanup(curl);
-
-        for (std::vector<Lesson> vec : rows) {
-            for (Lesson lesson : vec) {
+        
+        for (const Lesson& lesson : lessons) {
                 iDs.insert(lesson.ID);
-            }
         }
         for (const std::string& id : iDs) {
-            std::vector<std::vector<Lesson>> filteredLessons = filterLessonsByID(rows, id);
-            idLessons.push_back(filteredLessons);
+            std::vector<std::vector<std::vector<Lesson>>> groupedLessons = filterAndGroupLessonsByID(lessons, id);
+            idLessons.push_back(groupedLessons);
         }
+
         // Convert the list of lists of lessons to JSON
         nlohmann::json json_lessons = idLessons;
 
         // Convert JSON to string
-        std::string json_string = json_lessons.dump();// Set the URL for the POST request
+        std::string json_string = json_lessons.dump();
 
         // Initialize CURL for POST request
         curl = curl_easy_init();
-        if(curl) {
+        if (curl) {
             // Set the URL for the POST request
             curl_easy_setopt(curl, CURLOPT_URL, "http://127.0.0.1:5000/lessons");
 
@@ -305,6 +324,7 @@ int main() {
             curl_easy_cleanup(curl);
         }
     }
+
     // Cleanup libcurl global resources
     curl_global_cleanup();
 
