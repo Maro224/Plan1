@@ -226,8 +226,6 @@ int main() {
                                         colNum = 0;
                                     }
                                     if (classAttr && xmlStrcmp(classAttr->children->content, BAD_CAST("l")) == 0) {
-                                        // Extract the content of td
-                                        std::string content;
                                         // Found the td element with class l
                                         colNum++;
 
@@ -235,34 +233,54 @@ int main() {
                                         xmlNodePtr childNodes = tdNode->children;
                                         xmlAttrPtr childClassAttr = xmlHasProp(childNodes, BAD_CAST("class"));
                                         if (childClassAttr) {
-                                            xmlChar* childContent = xmlNodeGetContent(tdNode);
-                                            content = (const char*)childContent;
-                                            xmlFree(childContent);
-                                            if (content != "") {
-                                                std::string sub1 = content.substr(0, content.find(" "));
-                                                std::string sub2 = content.substr(content.find(" ") + 1);
-                                                std::string sub3 = sub2.substr(0, sub2.find(" "));
-                                                std::string sub4 = sub2.substr(sub2.find(" ") + 1);
-
-                                                Lesson lesson = Lesson(sub1, sub3, sub4, rowNum, colNum);
+                                            xmlChar const* content = NULL;
+                                            xmlChar const* id = NULL;
+                                            xmlChar const* classId = NULL;
+                                            // Iterate through the span elements within the td
+                                            for (xmlNodePtr span = tdNode->children; span; span = span->next) {
+                                                xmlAttrPtr classAttr = xmlHasProp(span, BAD_CAST("class"));
+                                                if (classAttr && xmlStrcmp(classAttr->children->content, BAD_CAST("p")) == 0) {
+                                                    content = xmlNodeGetContent(span);
+                                                }
+                                                else if (classAttr && xmlStrcmp(classAttr->children->content, BAD_CAST("n")) == 0) {
+                                                    id = xmlNodeGetContent(span);
+                                                }
+                                                else if (classAttr && xmlStrcmp(classAttr->children->content, BAD_CAST("s")) == 0) {
+                                                    classId = xmlNodeGetContent(span);
+                                                }
+                                            }
+                                            if (content && id && classId) {
+                                                std::string contentStr = (const char*)content;
+                                                std::string idStr = (const char*)id;
+                                                std::string classIdStr = (const char*)classId;
+                                                Lesson lesson = Lesson(contentStr, idStr, classIdStr, rowNum, colNum);
                                                 lessons.push_back(lesson);
                                             }
                                         }
                                         else {
                                             for (xmlNodePtr childNode = tdNode->children; childNode; childNode = childNode->next) {
                                                 if (childNode->type == XML_ELEMENT_NODE) {
-                                                    // Child node does not have a class attribute
-                                                    xmlChar* childContent = xmlNodeGetContent(childNode);
-                                                    content = (const char*)childContent;
-                                                    xmlFree(childContent);
-                                                    // Add the extracted content to the lessons vector
-                                                    if (content != "") {
-                                                        std::string sub1 = content.substr(0, content.find(" "));
-                                                        std::string sub2 = content.substr(content.find(" ") + 1);
-                                                        std::string sub3 = sub2.substr(0, sub2.find(" "));
-                                                        std::string sub4 = sub2.substr(sub2.find(" ") + 1);
-
-                                                        Lesson lesson = Lesson(sub1, sub3, sub4, rowNum, colNum);
+                                                    xmlChar const* content = NULL;
+                                                    xmlChar const* id = NULL;
+                                                    xmlChar const* classId = NULL;
+                                                    // Iterate through the span elements within the td
+                                                    for (xmlNodePtr span = childNode->children; span; span = span->next) {
+                                                        xmlAttrPtr classAttr = xmlHasProp(span, BAD_CAST("class"));
+                                                        if (classAttr && xmlStrcmp(classAttr->children->content, BAD_CAST("p")) == 0) {
+                                                            content = xmlNodeGetContent(span);
+                                                        }
+                                                        else if (classAttr && xmlStrcmp(classAttr->children->content, BAD_CAST("n")) == 0) {
+                                                            id = xmlNodeGetContent(span);
+                                                        }
+                                                        else if (classAttr && xmlStrcmp(classAttr->children->content, BAD_CAST("s")) == 0) {
+                                                            classId = xmlNodeGetContent(span);
+                                                        }
+                                                    }
+                                                    if (content && id && classId) {
+                                                        std::string contentStr = (const char*)content;
+                                                        std::string idStr = (const char*)id;
+                                                        std::string classIdStr = (const char*)classId;
+                                                        Lesson lesson = Lesson(contentStr, idStr, classIdStr, rowNum, colNum);
                                                         lessons.push_back(lesson);
                                                     }
                                                 }
