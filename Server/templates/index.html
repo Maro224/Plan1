@@ -9,11 +9,26 @@
     {% for row_group in lessons %}
     <h2>ID: {{ row_group[0][0][0]['ID'] }}</h2>
     <table border="1">
+        <tr>
+            <th>Nr</th>
+            <th>Godz</th>
+            <th>Poniedziałek</th>
+            <th>Wtorek</th>
+            <th>Środa</th>
+            <th>Czwartek</th>
+            <th>Piątek</th>
+        </tr>
         {% for row_num in row_group %}
             <tr>
+                <td>{{ row_num[0][0]['rowNum'] }}</td>
+                <td>{{ hours[row_num[0][0]['rowNum']] }}</td>
                 {% for column in row_num %}
                     {% for lesson in column %}
-                        <td>{{ lesson }}</td>
+                        {% if lesson['content'] == "" %}
+                        <td>   </td>
+                        {% else %}
+                        <td>{{ lesson['ID'] + " " + lesson['classID'] + " " + lesson['content']}}</td>
+                        {% endif %}
                     {% endfor %}
                 {% endfor %}
             </tr>
